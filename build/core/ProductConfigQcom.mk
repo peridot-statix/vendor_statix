@@ -100,9 +100,9 @@ ifneq ($(filter $(UM_6_1_FAMILY),$(PRODUCT_BOARD_PLATFORM)),)
     SOONG_CONFIG_qtidisplay_smmu_proxy := true
 endif
 # Enable ubwcp_headers on UM platforms that support it
-ifneq ($(filter $(UM_6_1_FAMILY),$(PRODUCT_BOARD_PLATFORM)),)
-    SOONG_CONFIG_qtidisplay_ubwcp_headers := true
-endif
+#ifneq ($(filter $(UM_6_1_FAMILY),$(PRODUCT_BOARD_PLATFORM)),)
+#    SOONG_CONFIG_qtidisplay_ubwcp_headers := true
+#endif
 # Check if the target uses composer version 3 and is part of composer version on every UM platforms that support it
 ifeq ($(TARGET_USES_COMPOSER3)$(filter $(UM_PLATFORMS),$(PRODUCT_BOARD_PLATFORM)),true)
     SOONG_CONFIG_qtidisplay_composer_version ?= v3
@@ -194,8 +194,6 @@ endif
 ifneq ($(USE_DEVICE_SPECIFIC_DATA_IPA_CFG_MGR),true)
 ifneq ($(filter $(UM_NO_GKI_PLATFORMS),$(PRODUCT_BOARD_PLATFORM)),)
     PRODUCT_SOONG_NAMESPACES += vendor/qcom/opensource/data-ipa-cfg-mgr-nogki
-else
-    PRODUCT_SOONG_NAMESPACES += vendor/qcom/opensource/data-ipa-cfg-mgr
 endif
 ifneq ($(filter $(UM_6_1_FAMILY),$(PRODUCT_BOARD_PLATFORM)),)
     PRODUCT_SOONG_NAMESPACES += hardware/qcom-caf/sm8650/data-ipa-cfg-mgr
