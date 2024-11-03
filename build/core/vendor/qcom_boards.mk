@@ -11,6 +11,7 @@ HOLI := holi #SM4350
 TARO := taro #SM8450
 PARROT := parrot
 KALAMA := kalama # SM8550
+PINEAPPLE := pineapple # SM8650
 
 # Board platforms lists to be used for
 # PRODUCT_BOARD_PLATFORM specific featurization
@@ -37,3 +38,4 @@ QCOM_BOARD_PLATFORMS += $(HOLI)
 QCOM_BOARD_PLATFORMS += $(TARO)
 QCOM_BOARD_PLATFORMS += $(PARROT)
 QCOM_BOARD_PLATFORMS += $(KALAMA)
+QCOM_BOARD_PLATFORMS += $(PINEAPPLE)

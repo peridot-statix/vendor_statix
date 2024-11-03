@@ -5,9 +5,10 @@ UM_4_19_FAMILY := $(KONA) $(LITO) $(BENGAL)
 UM_5_4_FAMILY := $(LAHAINA) $(HOLI)
 UM_5_10_FAMILY := $(TARO) $(PARROT)
 UM_5_15_FAMILY := $(KALAMA)
+UM_6_1_FAMILY := $(PINEAPPLE)
 
-UM_PLATFORMS := $(UM_4_4_FAMILY) $(UM_4_9_FAMILY) $(UM_4_14_FAMILY) $(UM_4_19_FAMILY) $(UM_5_4_FAMILY) $(UM_5_10_FAMILY) $(UM_5_15_FAMILY)
-QSSI_SUPPORTED_PLATFORMS := $(UM_4_4_FAMILY) $(UM_4_9_FAMILY) $(UM_4_14_FAMILY) $(UM_4_19_FAMILY) $(UM_5_4_FAMILY) $(UM_5_10_FAMILY) $(UM_5_15_FAMILY)
+UM_PLATFORMS := $(UM_4_4_FAMILY) $(UM_4_9_FAMILY) $(UM_4_14_FAMILY) $(UM_4_19_FAMILY) $(UM_5_4_FAMILY) $(UM_5_10_FAMILY) $(UM_5_15_FAMILY) $(UM_6_1_FAMILY)
+QSSI_SUPPORTED_PLATFORMS := $(UM_4_4_FAMILY) $(UM_4_9_FAMILY) $(UM_4_14_FAMILY) $(UM_4_19_FAMILY) $(UM_5_4_FAMILY) $(UM_5_10_FAMILY) $(UM_5_15_FAMILY) $(UM_6_1_FAMILY)
 UM_NO_GKI_PLATFORMS := $(UM_4_4_FAMILY) $(UM_4_9_FAMILY) $(UM_4_14_FAMILY) $(UM_4_19_FAMILY) $(UM_5_4_FAMILY)
 
 BOARD_USES_ADRENO := true
@@ -30,7 +31,11 @@ SOONG_CONFIG_qtidisplay += \
     gralloc_handle_has_custom_content_md_reserved_size \
     var1 \
     var2 \
-    var3
+    var3 \
+    llvmcov \
+    composer_version \
+    smmu_proxy \
+    ubwcp_headers
 
 # Set default values for qtidisplay config
 SOONG_CONFIG_qtidisplay_drmpp ?= false
@@ -44,6 +49,10 @@ SOONG_CONFIG_qtidisplay_gralloc_handle_has_custom_content_md_reserved_size ?= fa
 SOONG_CONFIG_qtidisplay_var1 ?= false
 SOONG_CONFIG_qtidisplay_var2 ?= false
 SOONG_CONFIG_qtidisplay_var3 ?= false
+SOONG_CONFIG_qtidisplay_llvmcov ?= false
+SOONG_CONFIG_qtidisplay_smmu_proxy ?= false
+SOONG_CONFIG_qtidisplay_ubwcp_headers ?= false
+SOONG_CONFIG_qtidisplay_composer_version ?= v2
 
 # UM platforms no longer need this set on O+
 ifneq ($(call is-board-platform-in-list, $(UM_PLATFORMS)),true)
@@ -62,28 +71,45 @@ ifeq ($(call is-board-platform-in-list, $(UM_PLATFORMS)),true)
 endif
 
 # Enable DRM PP driver on UM platforms that support it
-ifeq ($(call is-board-platform-in-list, $(UM_4_9_FAMILY) $(UM_4_14_FAMILY) $(UM_4_19_FAMILY) $(UM_5_4_FAMILY) $(UM_5_10_FAMILY) $(UM_5_15_FAMILY)),true)
+ifeq ($(call is-board-platform-in-list, $(UM_4_9_FAMILY) $(UM_4_14_FAMILY) $(UM_4_19_FAMILY) $(UM_5_4_FAMILY) $(UM_5_10_FAMILY) $(UM_5_15_FAMILY) $(UM_6_1_FAMILY)),true)
     SOONG_CONFIG_qtidisplay_drmpp := true
     TARGET_USES_DRM_PP := true
 endif
 
 # Enable displayconfig
-ifeq ($(call is-board-platform-in-list, $(UM_5_10_FAMILY) $(UM_5_15_FAMILY)),true)
+ifeq ($(call is-board-platform-in-list, $(UM_5_10_FAMILY) $(UM_5_15_FAMILY) $(UM_6_1_FAMILY)),true)
     SOONG_CONFIG_qtidisplay_displayconfig_enabled := true
 endif
 
-# Enable gralloc handle support on 5.10+
-ifeq ($(call is-board-platform-in-list, $(UM_5_10_FAMILY) $(UM_5_15_FAMILY)),true)
+# Enable gralloc handle support on 5.10
+ifeq ($(call is-board-platform-in-list, $(UM_5_10_FAMILY) $(UM_5_15_FAMILY) $(UM_6_1_FAMILY)),true)
     SOONG_CONFIG_qtidisplay_gralloc_handle_has_reserved_size := true
 endif
 
 # Enable Gralloc4 on UM platforms that support it
-ifneq ($(filter $(UM_5_4_FAMILY) $(UM_5_10_FAMILY) $(UM_5_15_FAMILY),$(PRODUCT_BOARD_PLATFORM)),)
+ifneq ($(filter $(UM_5_4_FAMILY) $(UM_5_10_FAMILY) $(UM_5_15_FAMILY) $(UM_6_1_FAMILY),$(PRODUCT_BOARD_PLATFORM)),)
     SOONG_CONFIG_qtidisplay_gralloc4 := true
 endif
 
+ifneq ($(filter $(UM_5_10_FAMILY) $(UM_5_15_FAMILY) $(UM_6_1_FAMILY),$(PRODUCT_BOARD_PLATFORM)),)
+    TARGET_USES_QCOM_AUDIO_AR ?= true
+endif
+
+# Enable smmu proxy on UM platforms that support it
+ifneq ($(filter $(UM_6_1_FAMILY),$(PRODUCT_BOARD_PLATFORM)),)
+    SOONG_CONFIG_qtidisplay_smmu_proxy := true
+endif
+# Enable ubwcp_headers on UM platforms that support it
+ifneq ($(filter $(UM_6_1_FAMILY),$(PRODUCT_BOARD_PLATFORM)),)
+    SOONG_CONFIG_qtidisplay_ubwcp_headers := true
+endif
+# Check if the target uses composer version 3 and is part of composer version on every UM platforms that support it
+ifeq ($(TARGET_USES_COMPOSER3)$(filter $(UM_PLATFORMS),$(PRODUCT_BOARD_PLATFORM)),true)
+    SOONG_CONFIG_qtidisplay_composer_version ?= v3
+endif
+
 # List of targets that use master side content protection
-MASTER_SIDE_CP_TARGET_LIST := msm8996 $(UM_4_4_FAMILY) $(UM_4_9_FAMILY) $(UM_4_14_FAMILY) $(UM_4_19_FAMILY) $(UM_5_4_FAMILY) $(UM_5_10_FAMILY) $(UM_5_15_FAMILY)
+MASTER_SIDE_CP_TARGET_LIST := msm8996 $(UM_4_4_FAMILY) $(UM_4_9_FAMILY) $(UM_4_14_FAMILY) $(UM_4_19_FAMILY) $(UM_5_4_FAMILY) $(UM_5_10_FAMILY) $(UM_5_15_FAMILY) $(UM_6_1_FAMILY)
 
 # Every qcom platform is considered a vidc target
 MSM_VIDC_TARGET_LIST := $(PRODUCT_BOARD_PLATFORM)
@@ -102,6 +128,8 @@ else ifeq ($(call is-board-platform-in-list, $(UM_5_10_FAMILY)),true)
     QCOM_HARDWARE_VARIANT := sm8450
 else ifeq ($(call is-board-platform-in-list, $(UM_5_15_FAMILY)),true)
     QCOM_HARDWARE_VARIANT := sm8550
+else ifeq ($(call is-board-platform-in-list, $(UM_6_1_FAMILY)),true)
+    QCOM_HARDWARE_VARIANT := sm8650
 else
     QCOM_HARDWARE_VARIANT := $(PRODUCT_BOARD_PLATFORM)
 endif
@@ -125,11 +153,22 @@ else ifeq ($(call is-board-platform-in-list, $(UM_5_10_FAMILY)),true)
     TARGET_KERNEL_VERSION := 5.10
 else ifeq ($(call is-board-platform-in-list, $(UM_5_15_FAMILY)),true)
     TARGET_KERNEL_VERSION := 5.15
+else ifeq ($(call is-board-platform-in-list, $(UM_6_1_FAMILY)),true)
+    TARGET_KERNEL_VERSION := 6.1
+endif
+
+ifneq ($(filter $(UM_4_9_FAMILY) $(UM_4_14_FAMILY) $(UM_4_19_FAMILY) $(UM_5_4_FAMILY) $(UM_5_10_FAMILY) $(UM_5_15_FAMILY) $(UM_6_1_FAMILY),$(PRODUCT_BOARD_PLATFORM)),)
+    TARGET_ADDITIONAL_GRALLOC_10_USAGE_BITS += | (1 << 27)
 endif
 
 # Required for frameworks/native
 ifeq ($(call is-board-platform-in-list, $(UM_PLATFORMS)),true)
     TARGET_USES_QCOM_UM_FAMILY := true
+endif
+
+ifneq ($(filter $(UM_5_10_FAMILY) $(UM_5_15_FAMILY) $(UM_6_1_FAMILY),$(PRODUCT_BOARD_PLATFORM)),)
+    TARGET_GRALLOC_HANDLE_HAS_CUSTOM_CONTENT_MD_RESERVED_SIZE ?= true
+    TARGET_GRALLOC_HANDLE_HAS_RESERVED_SIZE ?= true
 endif
 
 # Allow a device to opt-out hardset of PRODUCT_SOONG_NAMESPACES
@@ -157,6 +196,9 @@ ifneq ($(filter $(UM_NO_GKI_PLATFORMS),$(PRODUCT_BOARD_PLATFORM)),)
     PRODUCT_SOONG_NAMESPACES += vendor/qcom/opensource/data-ipa-cfg-mgr-nogki
 else
     PRODUCT_SOONG_NAMESPACES += vendor/qcom/opensource/data-ipa-cfg-mgr
+endif
+ifneq ($(filter $(UM_6_1_FAMILY),$(PRODUCT_BOARD_PLATFORM)),)
+    PRODUCT_SOONG_NAMESPACES += hardware/qcom-caf/sm8650/data-ipa-cfg-mgr
 endif
 endif
 
